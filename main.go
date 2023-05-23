@@ -1,8 +1,19 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/jootd/dstore/p2p"
+)
 
 func main() {
 
-	fmt.Println("hh")
+	transport := p2p.NewTCPTransport(":3000")
+
+	err := transport.ListenAndAccept()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	select {}
+
 }
