@@ -27,20 +27,29 @@ type TCPTransportOpts struct {
 	ListenAddr    string
 	HandShakeFunc HandShakeFunc
 	Decoder       Decoder
+	OnPeer        func(Peer) error
 }
 
 type TCPTransport struct {
 	TCPTransportOpts
 	listener net.Listener
+	rpcch    chan RPC
 
-	mu    sync.RWMutex
-	peers map[net.Addr]Peer
+	mu sync.RWMutex
+	// peers map[net.Addr]Peer
 }
 
 func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
 	return &TCPTransport{
 		TCPTransportOpts: opts,
+		rpcch:            make(chan RPC),
 	}
+}
+
+// consume implements the Transport interface, which will return read-only channel
+// fro reading the incoming messages received from another peer in the network
+func (t *TCPTransport) Consume() <-chan RPC {
+	return t.rpcch
 }
 
 func (t *TCPTransport) ListenAndAccept() error {
@@ -74,32 +83,48 @@ func (t *TCPTransport) startAcceptLoop() {
 
 }
 
-func (t *TCPTransport) handleConn(conn net.Conn) {
-	fmt.Printf("new incoming connection %+v\n", conn)
+// close implements the Peer interface
+func (p *TCPPeer) Close() error {
+	return p.conn.Close()
+}
 
+func (t *TCPTransport) handleConn(conn net.Conn) {
+	var err error
+
+	defer func() {
+		fmt.Printf("dropping peer connection: %s", err)
+		conn.Close()
+
+	}()
+
+	fmt.Printf("new incoming connection %+v\n", conn)
 	peer := NewTCPPeer(conn, true)
 
-	// fmt.Println(peer)
-
-	// fmt.Printf("new incoming connection %+v\n", peer)
-
-	if err := t.HandShakeFunc(peer); err != nil {
-		conn.Close()
+	if err = t.HandShakeFunc(peer); err != nil {
 		fmt.Printf("handshake failed: %s\n", err)
 		return
 
 	}
 
+	if t.OnPeer != nil {
+		if err = t.OnPeer(peer); err != nil {
+			fmt.Printf("error in  onpeer method %s", err)
+			peer.Close()
+			return
+		}
+	}
+
 	// Read Loop
-	msg := &Message{}
+	rpc := RPC{}
 	for {
-		if err := t.Decoder.Decode(conn, msg); err != nil {
+		if err := t.Decoder.Decode(conn, &rpc); err != nil {
 			fmt.Printf("TCP error: %s\n", err)
 			continue
 		}
 
-		msg.From = conn.RemoteAddr()
+		rpc.From = conn.RemoteAddr()
+		t.rpcch <- rpc
 
-		fmt.Printf("message: %+v\n", msg)
+		fmt.Printf("message: %+v\n", rpc)
 	}
 }
