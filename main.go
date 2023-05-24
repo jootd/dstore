@@ -8,7 +8,9 @@ import (
 
 func main() {
 
-	transport := p2p.NewTCPTransport(":3000")
+	transport := p2p.NewTCPTransport(p2p.TCPTransportOpts{
+		ListenAddr: ":3000",
+	})
 
 	err := transport.ListenAndAccept()
 	if err != nil {
