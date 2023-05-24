@@ -6,13 +6,19 @@ import (
 	"github.com/jootd/dstore/p2p"
 )
 
+func OnPeer(p p2p.Peer) error {
+	fmt.Println("doing some logic with the peer outside of TCPTransport")
+
+	return nil
+}
+
 func main() {
 
 	opts := p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
 		Decoder:       p2p.DefaultDecoder{},
 		HandShakeFunc: p2p.NOPHandshakeFunc,
-		OnPeer:        func(p2p.Peer) error { return fmt.Errorf("failed the onpeer func") },
+		OnPeer:        OnPeer,
 	}
 
 	tr := p2p.NewTCPTransport(opts)
