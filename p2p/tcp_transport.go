@@ -74,30 +74,32 @@ func (t *TCPTransport) startAcceptLoop() {
 
 }
 
-type Temp struct{}
-
 func (t *TCPTransport) handleConn(conn net.Conn) {
 	fmt.Printf("new incoming connection %+v\n", conn)
 
 	peer := NewTCPPeer(conn, true)
 
+	// fmt.Println(peer)
+
 	// fmt.Printf("new incoming connection %+v\n", peer)
 
 	if err := t.HandShakeFunc(peer); err != nil {
 		conn.Close()
-		fmt.Printf("handshake failed: %s\n", err.Error())
+		fmt.Printf("handshake failed: %s\n", err)
 		return
 
 	}
 
 	// Read Loop
-
-	msg := Temp{}
+	msg := &Message{}
 	for {
 		if err := t.Decoder.Decode(conn, msg); err != nil {
 			fmt.Printf("TCP error: %s\n", err)
 			continue
 		}
 
+		msg.From = conn.RemoteAddr()
+
+		fmt.Printf("message: %+v\n", msg)
 	}
 }

@@ -8,9 +8,13 @@ import (
 
 func main() {
 
-	transport := p2p.NewTCPTransport(p2p.TCPTransportOpts{
-		ListenAddr: ":3000",
-	})
+	opts := p2p.TCPTransportOpts{
+		ListenAddr:    ":3000",
+		Decoder:       p2p.DefaultDecoder{},
+		HandShakeFunc: p2p.NOPHandshakeFunc,
+	}
+
+	transport := p2p.NewTCPTransport(opts)
 
 	err := transport.ListenAndAccept()
 	if err != nil {
