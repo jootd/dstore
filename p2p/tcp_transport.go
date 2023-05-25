@@ -35,7 +35,7 @@ type TCPTransport struct {
 	listener net.Listener
 	rpcch    chan RPC
 
-	mu sync.RWMutex
+	// mu sync.RWMutex
 	// peers map[net.Addr]Peer
 }
 
@@ -75,7 +75,7 @@ func (t *TCPTransport) startAcceptLoop() {
 
 		}
 
-		fmt.Println("TCP ACCEPT ")
+		fmt.Println("TCP ACCEPT")
 
 		go t.handleConn(conn)
 
