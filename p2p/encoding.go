@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"encoding/gob"
+	"fmt"
 	"io"
 )
 
@@ -22,6 +23,9 @@ func (dec DefaultDecoder) Decode(r io.Reader, msg *RPC) error {
 	buf := make([]byte, 1028)
 
 	n, err := r.Read(buf)
+	if err == io.EOF {
+		fmt.Printf("ERROR %s", err)
+	}
 	if err != nil {
 		return err
 	}

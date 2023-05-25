@@ -75,6 +75,8 @@ func (t *TCPTransport) startAcceptLoop() {
 
 		}
 
+		fmt.Println("TCP ACCEPT ")
+
 		go t.handleConn(conn)
 
 	}
