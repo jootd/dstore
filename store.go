@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const defaultRootDirectoryName = "jootd"
+
 func CASPathTransformFunc(key string) PathKey {
 	hash := sha1.Sum([]byte(key))
 	hashStr := hex.EncodeToString(hash[:])
@@ -37,11 +39,15 @@ func CASPathTransformFunc(key string) PathKey {
 type PathTransformFunc func(string) PathKey
 
 type StoreOpts struct {
+	Root              string
 	PathTransformFunc PathTransformFunc
 }
 
 var DefaultPathTransformFunc = func(key string) PathKey {
-	return PathKey{}
+	return PathKey{
+		PathName: key,
+		Filename: key,
+	}
 }
 
 type Store struct {
@@ -49,6 +55,14 @@ type Store struct {
 }
 
 func NewStore(opts StoreOpts) *Store {
+
+	if opts.PathTransformFunc == nil {
+		opts.PathTransformFunc = DefaultPathTransformFunc
+	}
+
+	if len(opts.Root) == 0 {
+	}
+
 	return &Store{
 		StoreOpts: opts,
 	}
@@ -116,13 +130,14 @@ func (s *Store) readStream(key string) (io.ReadCloser, error) {
 func (s *Store) writeStream(key string, r io.Reader) error {
 
 	pKey := s.PathTransformFunc(key)
-	if err := os.MkdirAll(pKey.PathName, os.ModePerm); err != nil {
+	pathNameWithRoot := fmt.Sprintf("%s/%s", s.Root, pKey.PathName)
+
+	if err := os.MkdirAll(pathNameWithRoot, os.ModePerm); err != nil {
 		return err
 	}
 
-	FullPath := pKey.FullPath()
-
-	f, err := os.Create(FullPath)
+	fullPathWithRoot := fmt.Sprintf("%s/%s", s.Root, pKey.FullPath())
+	f, err := os.Create(fullPathWithRoot)
 	if err != nil {
 		return err
 	}
@@ -131,7 +146,7 @@ func (s *Store) writeStream(key string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("written {%d} bytes to disk: %s,", n, FullPath)
+	log.Printf("written {%d} bytes to disk: %s,", n, s.Root+"/"+pKey.FullPath())
 
 	return nil
 

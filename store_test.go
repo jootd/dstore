@@ -10,6 +10,7 @@ import (
 func TestStoreDeleteKey(t *testing.T) {
 	opts := StoreOpts{
 		PathTransformFunc: CASPathTransformFunc,
+		Root:              "mar",
 	}
 
 	s := NewStore(opts)
@@ -28,6 +29,7 @@ func TestStoreDeleteKey(t *testing.T) {
 func TestStore(t *testing.T) {
 	opts := StoreOpts{
 		PathTransformFunc: CASPathTransformFunc,
+		Root:              "mar",
 	}
 
 	s := NewStore(opts)
