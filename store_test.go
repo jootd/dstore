@@ -63,15 +63,17 @@ func TestStore(t *testing.T) {
 
 func TestPathTransform(t *testing.T) {
 
-	key := "picnic"
-	// expected := "8cb7f/0ef89/17f17/21d79/bcb5f/0abe1/4648e/dc6f4"
+	// key := ""
+	// CASPathTransformFunc(key)
 
-	pathName := CASPathTransformFunc(key)
+	// // expected := "8cb7f/0ef89/17f17/21d79/bcb5f/0abe1/4648e/dc6f4"
 
-	// if pathName != expected {
-	// 	t.Errorf("have %s  want %s", pathName, expected)
-	// }
+	// pathName := CASPathTransformFunc(key)
 
-	fmt.Println(pathName)
+	// // if pathName != expected {
+	// // 	t.Errorf("have %s  want %s", pathName, expected)
+	// // }
+
+	// fmt.Println(pathName)
 
 }

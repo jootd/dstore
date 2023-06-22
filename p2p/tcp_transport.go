@@ -111,6 +111,7 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 			peer.Close()
 			return
 		}
+
 	}
 
 	// Read Loop
