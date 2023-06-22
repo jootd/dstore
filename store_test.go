@@ -7,15 +7,24 @@ import (
 	"testing"
 )
 
-func TestStoreDeleteKey(t *testing.T) {
+func newStore() *Store {
 	opts := StoreOpts{
 		PathTransformFunc: CASPathTransformFunc,
 		Root:              "mar",
 	}
+	return NewStore(opts)
+}
 
-	s := NewStore(opts)
+func tearDown(t *testing.T, s *Store) {
+	s.Clear()
+}
+
+func TestStoreDeleteKey(t *testing.T) {
+	s := newStore()
+	defer tearDown(t, s)
+
 	key := "mario"
-	data := []byte("jpg bytes")
+	data := []byte("mp3bytes")
 
 	if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
 		t.Error(err)
@@ -27,18 +36,18 @@ func TestStoreDeleteKey(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
-	opts := StoreOpts{
-		PathTransformFunc: CASPathTransformFunc,
-		Root:              "mar",
-	}
+	s := newStore()
+	defer tearDown(t, s)
 
-	s := NewStore(opts)
 	key := "mario"
-	data := []byte("mp3 bytes")
+	data := []byte("mp3bytes")
 	if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
 		t.Error(err)
 	}
 
+	if ok := s.Has(key); !ok {
+		t.Errorf("expected to have key %s", key)
+	}
 	r, err := s.Read(key)
 	if err != nil {
 		t.Error(err)
@@ -48,8 +57,8 @@ func TestStore(t *testing.T) {
 	fmt.Println(string(b))
 	if string(b) != string(data) {
 		t.Errorf("want %s  have %s", data, b)
-
 	}
+
 }
 
 func TestPathTransform(t *testing.T) {
