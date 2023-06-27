@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/jootd/dstore/p2p"
 )
@@ -14,27 +16,32 @@ func OnPeer(p p2p.Peer) error {
 
 func main() {
 
-	opts := p2p.TCPTransportOpts{
+	tcpTransportOpts := p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
-		Decoder:       p2p.DefaultDecoder{},
 		HandShakeFunc: p2p.NOPHandshakeFunc,
-		OnPeer:        OnPeer,
+		Decoder:       p2p.DefaultDecoder{},
+		// TODO: OnPeer Func
+	}
+	tcpTransport := p2p.NewTCPTransport(tcpTransportOpts)
+
+	fileServerOpts := FileServerOpts{
+		StorageRoot:       "3000_network",
+		PathTransformFunc: CASPathTransformFunc,
+		Transport:         tcpTransport,
 	}
 
-	tr := p2p.NewTCPTransport(opts)
+	fs := NewFileServer(fileServerOpts)
 
 	go func() {
-		for {
-			msg := <-tr.Consume()
-			fmt.Printf("%+v\n", msg)
-		}
+		time.Sleep(time.Second * 5)
+		fs.Stop()
 
 	}()
 
-	err := tr.ListenAndAccept()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	select {}
+	if err := fs.Start(); err != nil {
+		log.Fatal(err)
 
+	}
+
+	select {}
 }
