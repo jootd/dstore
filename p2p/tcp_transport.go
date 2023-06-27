@@ -1,7 +1,9 @@
 package p2p
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -61,7 +63,15 @@ func (t *TCPTransport) ListenAndAccept() error {
 
 	go t.startAcceptLoop()
 
+	log.Printf("TCP Transport listening on port %s\n", t.ListenAddr)
+
 	return nil
+
+}
+
+func (t *TCPTransport) Close() error {
+
+	return t.listener.Close()
 
 }
 
@@ -69,16 +79,30 @@ func (t *TCPTransport) startAcceptLoop() {
 
 	for {
 		conn, err := t.listener.Accept()
+		if errors.Is(err, net.ErrClosed) {
+			return
+		}
 		if err != nil {
 			fmt.Printf("TCP accept error: %s\n", err)
-
 		}
 
 		fmt.Println("TCP ACCEPT")
 
-		go t.handleConn(conn)
+		go t.handleConn(conn, false)
 
 	}
+
+}
+func (t *TCPTransport) Dial(addr string) error {
+
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	go t.handleConn(conn, true)
+
+	return nil
 
 }
 
@@ -87,22 +111,20 @@ func (p *TCPPeer) Close() error {
 	return p.conn.Close()
 }
 
-func (t *TCPTransport) handleConn(conn net.Conn) {
+func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	var err error
 
 	defer func() {
 		fmt.Printf("dropping peer connection: %s", err)
 		conn.Close()
-
 	}()
 
 	fmt.Printf("new incoming connection %+v\n", conn)
-	peer := NewTCPPeer(conn, true)
+	peer := NewTCPPeer(conn, outbound)
 
 	if err = t.HandShakeFunc(peer); err != nil {
 		fmt.Printf("handshake failed: %s\n", err)
 		return
-
 	}
 
 	if t.OnPeer != nil {
@@ -111,7 +133,6 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 			peer.Close()
 			return
 		}
-
 	}
 
 	// Read Loop

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/jootd/dstore/p2p"
 )
@@ -11,6 +12,7 @@ type FileServerOpts struct {
 	PathTransformFunc PathTransformFunc
 	Transport         p2p.Transport
 	TCPTransportOpts  p2p.TCPTransportOpts
+	BootstrapNodes    []string
 }
 
 type FileServer struct {
@@ -37,9 +39,31 @@ func (s *FileServer) Start() error {
 		return err
 	}
 
+	if !(len(s.BootstrapNodes) == 0) {
+		s.BootstrapNetwork()
+	}
+
 	s.loop()
 
 	return nil
+}
+
+func (s *FileServer) BootstrapNetwork() error {
+	for _, addr := range s.BootstrapNodes {
+
+		go func(addr string) {
+
+			fmt.Printf("Attempting to connect %s\n", addr)
+			if err := s.Transport.Dial(addr); err != nil {
+				log.Println(err.Error())
+			}
+
+		}(addr)
+
+	}
+
+	return nil
+
 }
 
 func (s *FileServer) Stop() {
@@ -54,7 +78,6 @@ func (s *FileServer) loop() {
 
 	for {
 
-		fmt.Println("aq shemodis")
 		select {
 		case msg := <-s.Transport.Consume():
 			fmt.Println(string(msg.Payload))
