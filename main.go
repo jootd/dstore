@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/jootd/dstore/p2p"
 )
@@ -43,11 +45,14 @@ func main() {
 		log.Fatal(s1.Start())
 	}()
 
-	go func() {
+	time.Sleep(time.Second * 1)
 
-		log.Fatal(s2.Start())
-	}()
+	go s2.Start()
+
+	time.Sleep(time.Second * 1)
+
+	data := bytes.NewReader([]byte("file  data"))
+	s2.StoreData("gg", data)
 
 	select {}
-
 }

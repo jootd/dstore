@@ -10,7 +10,7 @@ import (
 type TCPPeer struct {
 
 	// conn is underlying connection of peer
-	conn net.Conn
+	net.Conn
 
 	// dial, retrieve a conn => outbound == true
 	// accept,  retrieve a conn => outbound == false
@@ -19,14 +19,9 @@ type TCPPeer struct {
 
 func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 	return &TCPPeer{
-		conn:     conn,
+		Conn:     conn,
 		outbound: outbound,
 	}
-}
-
-// RemoteAddr implements the Peer interface
-func (p *TCPPeer) RemoteAddr() net.Addr {
-	return p.conn.RemoteAddr()
 }
 
 type TCPTransportOpts struct {
@@ -74,12 +69,6 @@ func (t *TCPTransport) ListenAndAccept() error {
 
 }
 
-func (t *TCPTransport) Close() error {
-
-	return t.listener.Close()
-
-}
-
 func (t *TCPTransport) startAcceptLoop() {
 
 	for {
@@ -98,6 +87,11 @@ func (t *TCPTransport) startAcceptLoop() {
 	}
 
 }
+
+func (t *TCPTransport) Close() error {
+	return t.Close()
+}
+
 func (t *TCPTransport) Dial(addr string) error {
 
 	conn, err := net.Dial("tcp", addr)
@@ -114,7 +108,7 @@ func (t *TCPTransport) Dial(addr string) error {
 // send implements the Peer interface
 func (p *TCPPeer) Send(msg []byte) error {
 
-	if _, err := p.conn.Write(msg); err != nil {
+	if _, err := p.Conn.Write(msg); err != nil {
 		return err
 	}
 
@@ -122,9 +116,6 @@ func (p *TCPPeer) Send(msg []byte) error {
 }
 
 // close implements the Peer interface
-func (p *TCPPeer) Close() error {
-	return p.conn.Close()
-}
 
 func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	var err error
