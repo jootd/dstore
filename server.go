@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/jootd/dstore/p2p"
 )
@@ -19,6 +20,9 @@ type FileServer struct {
 	FileServerOpts
 	store  *Store
 	quitch chan struct{}
+
+	peerLock sync.Mutex
+	peers    map[string]p2p.Peer
 }
 
 func NewFileServer(opts FileServerOpts) *FileServer {
@@ -30,6 +34,7 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 		FileServerOpts: opts,
 		store:          NewStore(storeOpts),
 		quitch:         make(chan struct{}),
+		peers:          make(map[string]p2p.Peer),
 	}
 }
 
@@ -39,7 +44,7 @@ func (s *FileServer) Start() error {
 		return err
 	}
 
-	if !(len(s.BootstrapNodes) == 0) {
+	if len(s.BootstrapNodes) != 0 {
 		s.BootstrapNetwork()
 	}
 
@@ -50,9 +55,7 @@ func (s *FileServer) Start() error {
 
 func (s *FileServer) BootstrapNetwork() error {
 	for _, addr := range s.BootstrapNodes {
-
 		go func(addr string) {
-
 			fmt.Printf("Attempting to connect %s\n", addr)
 			if err := s.Transport.Dial(addr); err != nil {
 				log.Println(err.Error())
@@ -64,6 +67,15 @@ func (s *FileServer) BootstrapNetwork() error {
 
 	return nil
 
+}
+
+func (s *FileServer) OnPeer(p p2p.Peer) error {
+	s.peerLock.Lock()
+	defer s.peerLock.Unlock()
+	s.peers[p.RemoteAddr().String()] = p
+	log.Printf("connected with remote %s ", p.RemoteAddr())
+
+	return nil
 }
 
 func (s *FileServer) Stop() {

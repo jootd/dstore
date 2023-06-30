@@ -24,6 +24,11 @@ func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 	}
 }
 
+// RemoteAddr implements the Peer interface
+func (p *TCPPeer) RemoteAddr() net.Addr {
+	return p.conn.RemoteAddr()
+}
+
 type TCPTransportOpts struct {
 	ListenAddr    string
 	HandShakeFunc HandShakeFunc
@@ -106,6 +111,16 @@ func (t *TCPTransport) Dial(addr string) error {
 
 }
 
+// send implements the Peer interface
+func (p *TCPPeer) Send(msg []byte) error {
+
+	if _, err := p.conn.Write(msg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // close implements the Peer interface
 func (p *TCPPeer) Close() error {
 	return p.conn.Close()
@@ -119,7 +134,6 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 		conn.Close()
 	}()
 
-	fmt.Printf("new incoming connection %+v\n", conn)
 	peer := NewTCPPeer(conn, outbound)
 
 	if err = t.HandShakeFunc(peer); err != nil {
